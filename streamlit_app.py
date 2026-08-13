@@ -1,41 +1,44 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import joblib
 
-# Untuk kebutuhan riil, simpan model dari sel sebelumnya (joblib.dump(best_rf, 'rf_model.pkl'))
-# dan load di sini: best_rf = joblib.load('rf_model.pkl')
+# Konfigurasi Halaman
+st.set_page_config(page_title="Dashboard Skripsi - IDX30", layout="wide")
 
-st.title("Sistem Klasifikasi Kelayakan Investasi Saham IDX30")
-st.markdown("Mengimplementasikan algoritma **Random Forest** teroptimasi untuk memproyeksikan portofolio tahun depan (CRISP-DM Deployment).")
+# Header
+st.title("📊 Dashboard Rekomendasi Investasi Saham IDX30 (Proyeksi 2026)")
+st.markdown("""
+**Implementasi Algoritma Random Forest & CRISP-DM**  
+Dashboard ini menampilkan daftar saham IDX30 yang diprediksi **Layak Investasi** untuk tahun 2026 berdasarkan analisis rasio fundamental (EPS, PER, PBV, ROE, ROA, DER).
+""")
 
-st.sidebar.header("Navigasi")
-menu = st.sidebar.radio("Pilih Halaman", ["Home", "Dataset", "Prediksi", "Evaluasi Model"])
+st.divider()
 
-if menu == "Prediksi":
-    st.subheader("Simulasi Prediksi Kelayakan (Input Rasio Fundamental)")
-    col1, col2, col3 = st.columns(3)
+# Fungsi untuk memuat data
+@st.cache_data
+def load_data():
+    # Pastikan nama file sesuai dengan yang di-upload ke GitHub
+    return pd.read_csv('Rekomendasi_IDX30_2026.csv')
 
-    with col1:
-        eps_growth = st.number_input("EPS Growth (%)", value=0.05)
-        roe = st.number_input("ROE (%)", value=0.12)
-        cr = st.number_input("Current Ratio (x)", value=1.50)
-
-    with col2:
-        rev_growth = st.number_input("Revenue Growth (%)", value=0.08)
-        npm = st.number_input("NPM (%)", value=0.15)
-        per = st.number_input("PER (x)", value=10.5)
-
-    with col3:
-        roa = st.number_input("ROA (%)", value=0.06)
-        der = st.number_input("DER (x)", value=0.85)
-        pbv = st.number_input("PBV (x)", value=1.2)
-
-    if st.button("Kalkulasi Proyeksi", type='primary'):
-        # Pada sistem nyata, input ini juga harus melalui proses scaler.transform()
-        # prediksi = best_rf.predict(scaler.transform([[eps_growth, rev_growth, roa, roe, npm, der, cr, per, pbv]]))
-
-        # Simulasi Antarmuka
-        st.success("Terkalkulasi. Proyeksi Selesai.")
-        st.write("### Rekomendasi Mesin: LAYAK INVESTASI")
-        st.write("**Probabilitas Layak:** 84% | **Probabilitas Tidak Layak:** 16%")
+try:
+    df = load_data()
+    
+    st.subheader(f"🏆 Hasil Prediksi: {len(df)} Saham Direkomendasikan")
+    st.write("Tabel di bawah ini diurutkan berdasarkan probabilitas kelayakan tertinggi dari model Random Forest.")
+    
+    # Menampilkan DataFrame dengan format yang rapi
+    st.dataframe(
+        df.style.format({
+            'EPS': '{:,.2f}',
+            'PER': '{:.2f}',
+            'PBV': '{:.2f}',
+            'ROE': '{:.4f}',
+            'ROA': '{:.4f}',
+            'DER': '{:.4f}',
+            'Probabilitas_Layak': '{:.2%}'
+        }),
+        use_container_width=True,
+        hide_index=True
+    )
+    
+except FileNotFoundError:
+    st.error("File 'Rekomendasi_IDX30_2026.csv' tidak ditemukan. Pastikan file tersebut sudah diunggah ke repositori GitHub.")
